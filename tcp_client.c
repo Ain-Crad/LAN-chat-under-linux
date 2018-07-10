@@ -124,10 +124,10 @@ int main(int argc, char *argv[]){
 			fprintf(stderr, "Write Error:%s\n", strerror(errno));
 			exit(1);
 		}
-		if(strcmp(send_msg, "end")==0){
+		if(strcmp(send_msg, "(end)")==0){
 			break;
 		}
-		else if(strcmp(send_msg, "sendTo")==0){
+		else if(strcmp(send_msg, "(sendTo)")==0){
 			fgets(send_msg, MAX_BUF_SIZE, stdin);
 			for(i = 0; i < strlen(send_msg); i++){
 				if(send_msg[i] == '\n'){
@@ -151,6 +151,7 @@ int main(int argc, char *argv[]){
 				fprintf(stderr, "Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
+			printf("(private message)\n");
 		}
 		else if(strcmp(send_msg, "online_list")==0){
 			if((nbytes = read(sockfd, buffer, 1024)) == -1){

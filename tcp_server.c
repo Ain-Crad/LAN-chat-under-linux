@@ -33,7 +33,8 @@ struct data_usr{
 
 int cnt;
 bool user_old;
-const char ch[3] = ":";
+const char ch[3] = ":\0";
+const char priv[20] = "(private message)\0";
 
 int main(int argc, char *argv[]){
 	int sockfd, new_fd;
@@ -148,26 +149,39 @@ void *rec_data(void *fd){
 		strcat(user_name, ch);
 		strcat(user_name, msg);
 		
-		if(strcmp(msg, "end")==0){
+		if(strcmp(msg, "(end)")==0){
 			//printf("server:end\n");
 			int i;
 			for(i = 0; i < cnt; i++){
 				if(data[i].data_fd == client_fd){
 					data[i].online = false;
+					break;
 				}
-				break;
 			}
+			break;
 		}
-		else if(strcmp(msg, "sendTo")==0){
+		else if(strcmp(msg, "(sendTo)")==0){
 			int i;
 			if((nbytes = read(client_fd, object, sizeof(object))) == -1){
 				fprintf(stderr, "Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
+			object[nbytes] = '\0';
 			if((nbytes = read(client_fd, msg, sizeof(msg))) == -1){
 				fprintf(stderr, "Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
+			msg[nbytes] = '\0';
+			
+			for(k = 0; k < cnt; k++){
+				if(data[k].online == true && data[k].data_fd == client_fd){
+					strcpy(user_name, data[k].data_user);
+					break;
+				}
+			}
+			strcat(user_name, ch);
+			strcat(user_name, msg);
+			strcat(user_name, priv);
 			for(i = 0; i < cnt; i++){
 				if(data[i].online == true && strcmp(data[i].data_user, object) == 0){
 					fd_tmp = data[i].data_fd;
@@ -176,7 +190,7 @@ void *rec_data(void *fd){
 			}
 			for(i = 0; i < cnt; i++){
 				if(data[i].online == true && data[i].data_fd == fd_tmp){
-					if(write(data[i].data_fd, msg, strlen(msg)) == -1){
+					if(write(data[i].data_fd, user_name, strlen(user_name)) == -1){
 						fprintf(stderr, "Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
@@ -212,7 +226,7 @@ void *rec_data(void *fd){
 		}
 		//printf("receive from client is %s/n",char_recv);
 	}
-	free(fd);
+	//free(fd);
 	close(client_fd);
 	pthread_exit(NULL);
 }
