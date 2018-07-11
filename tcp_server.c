@@ -66,10 +66,10 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	
-	//memset(data, 0, sizeof(data));//初始化
+	memset(data, 0, sizeof(data));//初始化
 	cnt = 0;
 	while(1){
-		//memset(&inf, 0, sizeof(inf));//初始化
+		memset(&inf, 0, sizeof(inf));//初始化
 		user_old = false;
 		pthread_t thread;//创建新的线程接收客户端数据
 		sin_size = sizeof(struct sockaddr_in);
@@ -208,6 +208,7 @@ void *rec_data(void *fd){
 					list[strlen(list)] = '\n';
 				}
 			}
+			list[strlen(list)] = '\0';
 			if(write(client_fd, list, strlen(list)) == -1){
 				fprintf(stderr, "Write Error:%s\n", strerror(errno));
 				exit(1);

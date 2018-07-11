@@ -153,13 +153,6 @@ int main(int argc, char *argv[]){
 			}
 			printf("(private message)\n");
 		}
-		else if(strcmp(send_msg, "online_list")==0){
-			if((nbytes = read(sockfd, buffer, 1024)) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
-				exit(1);
-			}
-			printf("%s\n", buffer);
-		}
 	}
 
 	pthread_detach(thread);//destory thread
