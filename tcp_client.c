@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define portnumber 8633
 #define MAX_BUF_SIZE 100
@@ -22,7 +23,24 @@ void *rec_data(void *fd);
 struct infstr{
 	char user_str[100];
 	char ip_str[100];
+	char passwd_str[100];
 } inf;
+
+struct sign_up{
+	char user_sign[100];
+	char passwd_sign[100];
+	char email_sign[100];
+} sign;
+
+bool exist;
+bool signfail;
+
+const char sign_failed[] = "The user has been signed\0";
+const char verif_failed[] = "The verification code is wrong\0";
+const char log_failed[] = "The user name or the password is not correct\0";
+char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
+char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
+const char conti[] = "continue\0";
 
 int main(int argc, char *argv[]){
 	const char *eth_name = "wlp6s0";
@@ -31,6 +49,9 @@ int main(int argc, char *argv[]){
 	char model[100];
 	char buffer[1024];
 	char user[100];
+	char passwd[100];
+	char email[100];
+	char verif_code[100];
 	char send_msg[100];
 	struct sockaddr_in server_addr;
 	struct hostent *host;
@@ -66,41 +87,104 @@ int main(int argc, char *argv[]){
 	}
 	get_local_ip(eth_name, ip, sockfd);
 	
-	printf("log in or sign up\n");
-	fgets(model, MAX_BUF_SIZE, stdin);
+	
 	while(1){
-		if(strcmp(model,"log in\n") == 0){
+		signfail = false;
+		printf("log in or sign up\n");
+		fgets(model, MAX_BUF_SIZE, stdin);
+		model[strlen(model) - 1] = '\0';
+		if(write(sockfd, model, sizeof(model)) == -1){
+			fprintf(stderr, "Write Error:%s\n", strerror(errno));
+			exit(1);
+		}
+		
+		if(strcmp(model,"log in") == 0){
 			printf("user:");
 			fgets(user, MAX_BUF_SIZE, stdin);
-			for(i = 0; i < MAX_BUF_SIZE; i++){
-				if(user[i] == '\n'){
-					user[i] = '\0';
-					break;
-				}
-			}
+			user[strlen(user) - 1] = '\0';
+			
+			printf("passwd:");
+			fgets(passwd, MAX_BUF_SIZE, stdin);
+			passwd[strlen(passwd) - 1] = '\0';
+			
+			
 			strcpy(inf.user_str, user);
 			strcpy(inf.ip_str, ip);
-			if(write(sockfd, &inf, sizeof(inf)) == -1){
+			strcpy(inf.passwd_str, passwd);
+			//printf("writing\n");
+			if(write(sockfd, &inf, sizeof(struct infstr)) == -1){
 				fprintf(stderr, "Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
-			
+			//printf("write success\n");
 			if((nbytes = read(sockfd, buffer, 1024)) == -1){
 				fprintf(stderr, "Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
 			buffer[nbytes] = '\0';
 			printf("%s\n", buffer);
-			break;
+			if(strcmp(buffer, log_succ) == 0){
+				break;
+			}
 		}
-		else if(strcmp(model,"sign up\n") == 0){
+		else if(strcmp(model,"sign up") == 0){
+			printf("user:");
+			fgets(user, MAX_BUF_SIZE, stdin);
+			user[strlen(user) - 1] = '\0';
+			strcpy(sign.user_sign, user);
+			printf("passwd:");
+			fgets(passwd, MAX_BUF_SIZE, stdin);
+			passwd[strlen(passwd) - 1] = '\0';
+			strcpy(sign.passwd_sign, passwd);
+			printf("email:");
+			fgets(email, MAX_BUF_SIZE, stdin);
+			email[strlen(email) - 1] = '\0';
+			strcpy(sign.email_sign, email);
+			if(write(sockfd, &sign, sizeof(sign)) == -1){
+				fprintf(stderr, "(sign)Write Error:%s\n", strerror(errno));
+				exit(1);
+			}
 			
-			break;
+			if((nbytes = read(sockfd, buffer, sizeof(buffer))) == -1){
+				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				exit(1);
+			}
+			buffer[nbytes] = '\0';
+			
+			if(strcmp(buffer, sign_failed) == 0){
+				printf("%s\n", sign_failed);
+				continue;
+			}
+			else{
+				printf("verif_code:");
+				fgets(verif_code, MAX_BUF_SIZE, stdin);
+				verif_code[strlen(verif_code) - 1] = '\0';
+				if(write(sockfd, verif_code, sizeof(verif_code)) == -1){
+					fprintf(stderr, "(sign)Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				if((nbytes = read(sockfd, buffer, sizeof(buffer))) == -1){
+					fprintf(stderr, "Read Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				buffer[nbytes] = '\0';
+				printf("%s\n", buffer);
+				if(strcmp(buffer, sign_succ) == 0){
+					//printf("%s\n", sign_succ);
+					continue;
+				}
+				else if(strcmp(buffer, verif_failed) == 0){
+					//printf("%s\n", verif_failed);
+					continue;
+				}
+				
+			}
 		}
+		
 		else{
-			printf("No such a choice, please input again:");
+			printf("No such a choice, please input again\n");
 			memset(model, 0, sizeof(model));
-			fgets(model, MAX_BUF_SIZE, stdin);
+			//fgets(model, MAX_BUF_SIZE, stdin);
 		}
 	}
 	
@@ -112,6 +196,7 @@ int main(int argc, char *argv[]){
 	
 	while(1){
 		memset(send_msg, 0, sizeof(send_msg));
+		exist = true;
 		//printf("send:");
 		fgets(send_msg, MAX_BUF_SIZE, stdin);
 		for(i = 0; i < strlen(send_msg); i++){
@@ -128,30 +213,39 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		else if(strcmp(send_msg, "(sendTo)")==0){
-			fgets(send_msg, MAX_BUF_SIZE, stdin);
-			for(i = 0; i < strlen(send_msg); i++){
-				if(send_msg[i] == '\n'){
-					send_msg[i] = '\0';
+			while(1){
+				fgets(send_msg, MAX_BUF_SIZE, stdin);
+				for(i = 0; i < strlen(send_msg); i++){
+					if(send_msg[i] == '\n'){
+						send_msg[i] = '\0';
+						break;
+					}
+				}
+				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				if(exist){
+					fgets(send_msg, MAX_BUF_SIZE, stdin);
+					for(i = 0; i < strlen(send_msg); i++){
+						if(send_msg[i] == '\n'){
+							send_msg[i] = '\0';
+							break;
+						}
+					}
+					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+						fprintf(stderr, "Write Error:%s\n", strerror(errno));
+						exit(1);
+					}
+					printf("(private message)\n");
 					break;
 				}
-			}
-			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-				fprintf(stderr, "Write Error:%s\n", strerror(errno));
-				exit(1);
+				else{
+					continue;
+				}
+			
 			}
 			
-			fgets(send_msg, MAX_BUF_SIZE, stdin);
-			for(i = 0; i < strlen(send_msg); i++){
-				if(send_msg[i] == '\n'){
-					send_msg[i] = '\0';
-					break;
-				}
-			}
-			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-				fprintf(stderr, "Write Error:%s\n", strerror(errno));
-				exit(1);
-			}
-			printf("(private message)\n");
 		}
 	}
 
@@ -194,7 +288,14 @@ void *rec_data(void *fd){
 			exit(1);
 		}
 		rec_msg[nbytes] = '\0';
-		printf("%s\n", rec_msg);
+		if(rec_msg[nbytes - 1] == '*'){
+			exist = false;
+			printf("%s\n", rec_msg);
+		}
+		else{
+			printf("\t\t\t%s\n", rec_msg);
+		}
+		
 	}
 	//free(fd);
 	//close(sock_fd);
