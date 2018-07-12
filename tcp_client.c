@@ -38,8 +38,8 @@ bool signfail;
 const char sign_failed[] = "The user has been signed\0";
 const char verif_failed[] = "The verification code is wrong\0";
 const char log_failed[] = "The user name or the password is not correct\0";
-char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
-char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
+const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
+const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
 const char conti[] = "continue\0";
 
 int main(int argc, char *argv[]){

@@ -39,7 +39,7 @@ struct data_usr{
 	char data_ip[100];
 	char data_passwd[100];
 	char data_email[100];
-	pthread_t data_thread;
+	//pthread_t data_thread;
 	int data_fd;
 	bool online;
 } data[10];
@@ -55,6 +55,9 @@ const char sign_failed[] = "The user has been signed\0";
 const char verif_failed[] = "The verification code is wrong\0";
 const char log_failed[] = "The user name or the password is not correct\0";
 const char conti[] = "continue\0";
+const char hello[] = "Long time no see, how are you?\n";
+const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
+const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
 char buffer[100];
 
 char verif_code[10];
@@ -79,9 +82,6 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in client_addr;
 	int sin_size;
 	int nbytes;
-	char hello[] = "Long time no see, how are you?\n";
-	char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
-char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
 	int i = 0;
 	
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
@@ -119,14 +119,21 @@ char sign_succ[] = "sign up successful, you can log in now or continue to sign u
 		//fprintf(stderr, "Server get connection from %s\n\a", inet_ntoa(client_addr.sin_addr));
 		printf("Server get connection from %s\n\a", inet_ntoa(client_addr.sin_addr));
 		
-		
+		//create new thread
+		if(pthread_create(&thread, NULL, (void *)rec_data, &new_fd) != 0){
+			fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
+			exit(1);
+		}
+		/*
 		while(1){
 			int tmp;
+			
 			if((nbytes = read(new_fd, buffer, sizeof(buffer))) == -1){
 				fprintf(stderr, "Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
-			if(strcmp(buffer, "log in") == 0){
+			
+			if(log_signal){
 				if((nbytes = read(new_fd, &inf, sizeof(struct infnew))) == -1){
 					fprintf(stderr, "Read Error:%s\n", strerror(errno));
 					exit(1);
@@ -148,6 +155,7 @@ char sign_succ[] = "sign up successful, you can log in now or continue to sign u
 						fprintf(stderr, "Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
+					log_sinal = false;
 				}
 				else{
 					//printf("I am in else\n");
@@ -159,7 +167,7 @@ char sign_succ[] = "sign up successful, you can log in now or continue to sign u
 				}
 				
 			}
-			else if(strcmp(buffer, "sign up") == 0){
+			else if(sign_signal){
 				if((nbytes = read(new_fd, &sign, sizeof(struct sign_up))) == -1){
 					fprintf(stderr, "Read Error:%s\n", strerror(errno));
 					exit(1);
@@ -215,20 +223,14 @@ char sign_succ[] = "sign up successful, you can log in now or continue to sign u
 					}
 				}
 			}
-		}
-		
-		//create new thread
-		if(pthread_create(&thread, NULL, (void *)rec_data, &new_fd) != 0){
-			fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
-			exit(1);
-		}
+		}*/
 	}
-	
 	close(sockfd);
 	exit(0);
 }
 
 void *rec_data(void *fd){
+	int tmp;
 	char msg[100];
 	int client_fd;
 	int nbytes;
@@ -238,7 +240,7 @@ void *rec_data(void *fd){
 	char object[100];
 	int fd_tmp;
 	char list[1024];
-	
+	bool log_signal = false;
 	while(1){
 		memset(msg, 0, sizeof(msg));
 		memset(user_name, 0, sizeof(user_name));
@@ -269,6 +271,95 @@ void *rec_data(void *fd){
 				}
 			}
 			break;
+		}
+		else if(strcmp(msg, "log in")==0 && !log_signal){
+			int i;
+			if((nbytes = read(client_fd, &inf, sizeof(struct infnew))) == -1){
+				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				exit(1);
+			}
+			for(i = 0; i < cnt; i++){
+				if(strcmp(data[i].data_user, inf.user_new) == 0){
+					if(strcmp(data[i].data_passwd, inf.passwd_new) == 0){
+						strcpy(data[i].data_ip, inf.ip_new);
+						//data[i].data_thread = thread;
+						data[i].online = true;
+						break;
+					}
+				}
+			}
+			//printf("I am here\n");
+			if(i >= cnt){
+				//printf("I am in if\n");
+				if(write(client_fd, log_failed, strlen(log_failed)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+			}
+			else{
+				//printf("I am in else\n");
+				if(write(client_fd, log_succ, strlen(log_succ)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				log_signal = true;
+			}
+		}
+		else if(strcmp(msg, "sign up") == 0 && !log_signal){
+			int i;
+			if((nbytes = read(client_fd, &sign, sizeof(struct sign_up))) == -1){
+				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				exit(1);
+			}
+				
+			for(i = 0; i < cnt; i++){
+				if(sign.user_sign == data[i].data_user){
+					user_old = true;
+					break;
+				}
+			}
+				
+			if(user_old){
+				if(write(client_fd, sign_failed, strlen(sign_failed)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				user_old = false;
+			}
+			else{
+				if(write(client_fd, conti, strlen(conti)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+			}
+			srand((unsigned)(time(NULL)));
+			tmp = rand() % 10000;
+			sprintf(verif_code, "%04d", tmp);
+			printf("verif_code:%s\n", verif_code);
+			email(sign.email_sign, verif_code);
+			if((nbytes = read(client_fd, buffer, sizeof(buffer))) == -1){
+				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				exit(1);
+			}
+			//注册成功
+			if(strcmp(buffer, verif_code) == 0){
+				if(write(client_fd, sign_succ, strlen(sign_succ)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				strcpy(data[cnt].data_user, sign.user_sign);
+				strcpy(data[cnt].data_passwd, sign.passwd_sign);
+				strcpy(data[cnt].data_email, sign.email_sign);
+				data[cnt].data_fd = client_fd;
+				cnt++;
+			}
+			else{
+				printf("buffer:%s\n", buffer);
+				if(write(client_fd, verif_failed, strlen(verif_failed)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+			}
 		}
 		else if(strcmp(msg, "(sendTo)")==0){
 			int i;
@@ -344,7 +435,7 @@ void *rec_data(void *fd){
 				exit(1);
 			}
 		}
-		else{
+		else if(log_signal){
 			int i = 0;
 			for(i = 0; i < cnt; i++){
 				if(data[i].online == true && data[i].data_fd != client_fd){
