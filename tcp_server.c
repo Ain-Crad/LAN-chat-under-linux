@@ -62,7 +62,7 @@ const char log_succ[] = "login successful, enjoy the chat\n*********************
 const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
 const char perm_y[] = "have permission\0";
 const char perm_n[] = "have not permission\0";
-const char stop[] = "stop talking\0";
+const char stop[] = "***stop talking in 15 seconds***\0";
 char buffer[100];
 
 char verif_code[10];
@@ -188,14 +188,12 @@ void *rec_data(void *fd){
 				if(strcmp(data[i].data_user, inf.user_new) == 0){
 					if(strcmp(data[i].data_passwd, inf.passwd_new) == 0){
 						strcpy(data[i].data_ip, inf.ip_new);
+						data[cnt].data_fd = client_fd;
 						//data[i].data_thread = thread;
 						data[i].online = true;
 						if(fir){
 							data[i].perm = true;
 							fir = false;
-						}
-						else{
-							data[i].perm = false;
 						}
 						break;
 					}
@@ -352,7 +350,7 @@ void *rec_data(void *fd){
 		else if(strcmp(msg, "(banned)") == 0){
 			int i;
 			for(i = 0; i < cnt; i++){
-				if(data[i].online == true && strcmp(data[i].data_fd, client_fd) == 0){
+				if(data[i].online == true && data[i].data_fd == client_fd){
 					if(data[i].perm){
 						if(write(client_fd, perm_y, strlen(perm_y)) == -1){
 							fprintf(stderr, "Write Error:%s\n", strerror(errno));
