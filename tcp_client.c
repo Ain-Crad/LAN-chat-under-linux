@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <time.h>
+#include <signal.h>
 
 #define portnumber 8633
 #define MAX_BUF_SIZE 100
@@ -34,6 +35,7 @@ struct sign_up{
 
 bool exist;
 bool signfail;
+bool perm;
 
 const char sign_failed[] = "The user has been signed\0";
 const char verif_failed[] = "The verification code is wrong\0";
@@ -41,6 +43,10 @@ const char log_failed[] = "The user name or the password is not correct\0";
 const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
 const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
 const char conti[] = "continue\0";
+const char no_user[] = "*no such a user*\0";
+const char perm_y[] = "have permission\0";
+const char perm_n[] = "have not permission\0";
+const char stop[] = "stop talking\0";
 
 int main(int argc, char *argv[]){
 	const char *eth_name = "wlp6s0";
@@ -59,6 +65,13 @@ int main(int argc, char *argv[]){
 	char hi[30] = "Hi, server\n";
 	pthread_t thread;
 	int i;
+	//banned varible
+	struct sigaction act;
+	union sigval tsval;
+	act.sa_handler = show_msg;
+	act.sa_flags = 0;
+	sigemptyset(&act.sa_mask);
+	sigaction(50, &act, NULL);
 	
 	if(argc != 2){
 		fprintf(stderr, "Usage:%s hostname \a\n", argv[0]);
@@ -197,6 +210,7 @@ int main(int argc, char *argv[]){
 	while(1){
 		memset(send_msg, 0, sizeof(send_msg));
 		exist = true;
+		perm = false;
 		//printf("send:");
 		fgets(send_msg, MAX_BUF_SIZE, stdin);
 		for(i = 0; i < strlen(send_msg); i++){
@@ -215,24 +229,14 @@ int main(int argc, char *argv[]){
 		else if(strcmp(send_msg, "(sendTo)")==0){
 			while(1){
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
-				for(i = 0; i < strlen(send_msg); i++){
-					if(send_msg[i] == '\n'){
-						send_msg[i] = '\0';
-						break;
-					}
-				}
+				send_msg[strlen(send_msg) - 1] = '\0';
 				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 					fprintf(stderr, "Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				if(exist){
 					fgets(send_msg, MAX_BUF_SIZE, stdin);
-					for(i = 0; i < strlen(send_msg); i++){
-						if(send_msg[i] == '\n'){
-							send_msg[i] = '\0';
-							break;
-						}
-					}
+					send_msg[strlen(send_msg) - 1] = '\0';
 					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 						fprintf(stderr, "Write Error:%s\n", strerror(errno));
 						exit(1);
@@ -241,9 +245,26 @@ int main(int argc, char *argv[]){
 					break;
 				}
 				else{
-					continue;
+					break;
 				}
 			
+			}
+			
+		}
+		else if(strcmp(send_msg, "(banned)")==0){
+			if(perm){
+				fgets(send_msg, MAX_BUF_SIZE, stdin);
+				send_msg[strlen(send_msg) - 1] = '\0';
+				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				if(exist){
+					printf("(banned successful)\n");
+				}
+			}
+			else{
+				printf("You don't have the permission\n");
 			}
 			
 		}
@@ -282,15 +303,21 @@ void *rec_data(void *fd){
 	char rec_msg[100];
 	sock_fd = *((int *)fd);
 	while(1){
-		//memset(rec_msg, 0, sizeof(rec_msg));//有错误
+		//memset(rec_msg, 0, sizeof(rec_msg));
 		if((nbytes = read(sock_fd, rec_msg, sizeof(rec_msg))) == -1){
 			fprintf(stderr, "Read Error:%s\n", strerror(errno));
 			exit(1);
 		}
 		rec_msg[nbytes] = '\0';
-		if(rec_msg[nbytes - 1] == '*'){
+		if(strcmp(rec_msg, no_user) == 0){
 			exist = false;
 			printf("%s\n", rec_msg);
+		}
+		else if(strcmp(rec_msg, perm_y) == 0){
+			perm = true;
+		}
+		else if(strcmp(rec_msg, stop) == 0){
+			
 		}
 		else{
 			printf("\t\t\t%s\n", rec_msg);

@@ -42,15 +42,17 @@ struct data_usr{
 	//pthread_t data_thread;
 	int data_fd;
 	bool online;
+	bool perm;
 } data[10];
 
 int cnt;
+bool fir;
 bool user_old;
-const char ch[3] = ":\0";
-const char priv[20] = "(private message)\0";
-const char no_user[30] = "*no such a user, try again*\0";
-const char l[3] = "(\0";
-const char r[3] = ")\0";
+const char ch[] = ":\0";
+const char priv[] = "(private message)\0";
+const char no_user[] = "*no such a user*\0";
+const char l[] = "(\0";
+const char r[] = ")\0";
 const char sign_failed[] = "The user has been signed\0";
 const char verif_failed[] = "The verification code is wrong\0";
 const char log_failed[] = "The user name or the password is not correct\0";
@@ -58,6 +60,9 @@ const char conti[] = "continue\0";
 const char hello[] = "Long time no see, how are you?\n";
 const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
 const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
+const char perm_y[] = "have permission\0";
+const char perm_n[] = "have not permission\0";
+const char stop[] = "stop talking\0";
 char buffer[100];
 
 char verif_code[10];
@@ -106,6 +111,8 @@ int main(int argc, char *argv[]){
 	
 	memset(data, 0, sizeof(data));//初始化
 	cnt = 0;
+	fir = true;
+	
 	while(1){
 		memset(&inf, 0, sizeof(inf));//初始化
 		memset(buffer, 0, sizeof(buffer));
@@ -118,112 +125,11 @@ int main(int argc, char *argv[]){
 		}
 		//fprintf(stderr, "Server get connection from %s\n\a", inet_ntoa(client_addr.sin_addr));
 		printf("Server get connection from %s\n\a", inet_ntoa(client_addr.sin_addr));
-		
 		//create new thread
 		if(pthread_create(&thread, NULL, (void *)rec_data, &new_fd) != 0){
 			fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
 			exit(1);
 		}
-		/*
-		while(1){
-			int tmp;
-			
-			if((nbytes = read(new_fd, buffer, sizeof(buffer))) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
-				exit(1);
-			}
-			
-			if(log_signal){
-				if((nbytes = read(new_fd, &inf, sizeof(struct infnew))) == -1){
-					fprintf(stderr, "Read Error:%s\n", strerror(errno));
-					exit(1);
-				}
-				for(i = 0; i < cnt; i++){
-					if(strcmp(data[i].data_user, inf.user_new) == 0){
-						if(strcmp(data[i].data_passwd, inf.passwd_new) == 0){
-							strcpy(data[i].data_ip, inf.ip_new);
-							data[i].data_thread = thread;
-							data[i].online = true;
-							break;
-						}
-					}
-				}
-				//printf("I am here\n");
-				if(i >= cnt){
-					//printf("I am in if\n");
-					if(write(new_fd, log_failed, strlen(log_failed)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-					log_sinal = false;
-				}
-				else{
-					//printf("I am in else\n");
-					if(write(new_fd, log_succ, strlen(log_succ)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-					break;
-				}
-				
-			}
-			else if(sign_signal){
-				if((nbytes = read(new_fd, &sign, sizeof(struct sign_up))) == -1){
-					fprintf(stderr, "Read Error:%s\n", strerror(errno));
-					exit(1);
-				}
-				
-				for(i = 0; i < cnt; i++){
-					if(sign.user_sign == data[i].data_user){
-						user_old = true;
-						break;
-					}
-				}
-				
-				if(user_old){
-					if(write(new_fd, sign_failed, strlen(sign_failed)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-					user_old = false;
-					continue;
-				}
-				else{
-					if(write(new_fd, conti, strlen(conti)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-				}
-				srand((unsigned)(time(NULL)));
-				tmp = rand() % 10000;
-				sprintf(verif_code, "%04d", tmp);
-				printf("verif_code:%s\n", verif_code);
-				email(sign.email_sign, verif_code);
-				if((nbytes = read(new_fd, buffer, sizeof(buffer))) == -1){
-					fprintf(stderr, "Read Error:%s\n", strerror(errno));
-					exit(1);
-				}
-				//注册成功
-				if(strcmp(buffer, verif_code) == 0){
-					if(write(new_fd, sign_succ, strlen(sign_succ)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-					strcpy(data[cnt].data_user, sign.user_sign);
-					strcpy(data[cnt].data_passwd, sign.passwd_sign);
-					strcpy(data[cnt].data_email, sign.email_sign);
-					data[cnt].data_fd = new_fd;
-					cnt++;
-				}
-				else{
-					printf("buffer:%s\n", buffer);
-					if(write(new_fd, verif_failed, strlen(verif_failed)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-				}
-			}
-		}*/
 	}
 	close(sockfd);
 	exit(0);
@@ -284,6 +190,13 @@ void *rec_data(void *fd){
 						strcpy(data[i].data_ip, inf.ip_new);
 						//data[i].data_thread = thread;
 						data[i].online = true;
+						if(fir){
+							data[i].perm = true;
+							fir = false;
+						}
+						else{
+							data[i].perm = false;
+						}
 						break;
 					}
 				}
@@ -411,11 +324,12 @@ void *rec_data(void *fd){
 							}
 						}
 					}
-					break;
+					//break;
 				}
+				break;
 			}
 		}
-		else if(strcmp(msg, "online_list")==0){
+		else if(strcmp(msg, "(online_list)")==0){
 			int i;
 			memset(list, 0, sizeof(list));
 			for(i = 0; i < cnt; i++){
@@ -434,6 +348,55 @@ void *rec_data(void *fd){
 				fprintf(stderr, "Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
+		}
+		else if(strcmp(msg, "(banned)") == 0){
+			int i;
+			for(i = 0; i < cnt; i++){
+				if(data[i].online == true && strcmp(data[i].data_fd, client_fd) == 0){
+					if(data[i].perm){
+						if(write(client_fd, perm_y, strlen(perm_y)) == -1){
+							fprintf(stderr, "Write Error:%s\n", strerror(errno));
+							exit(1);
+						}
+						if((nbytes = read(client_fd, object, sizeof(object))) == -1){
+							fprintf(stderr, "Read Error:%s\n", strerror(errno));
+							exit(1);
+						}
+						object[nbytes] = '\0';
+						for(i = 0; i < cnt; i++){
+							if(data[i].online == true && strcmp(data[i].data_user, object) == 0){
+								fd_tmp = data[i].data_fd;
+								break;
+							}
+						}
+						if(i >= cnt){
+							if(write(client_fd, no_user, strlen(no_user)) == -1){
+								fprintf(stderr, "Write Error:%s\n", strerror(errno));
+								exit(1);
+							}
+						}
+						else{
+							if(write(fd_tmp, stop, strlen(stop)) == -1){
+								fprintf(stderr, "Write Error:%s\n", strerror(errno));
+								exit(1);
+							}
+						}
+					}
+					else{
+						if(write(client_fd, perm_n, strlen(perm_n)) == -1){
+							fprintf(stderr, "Write Error:%s\n", strerror(errno));
+							exit(1);
+						}
+					}
+				}
+				
+			}
+			
+			if((nbytes = read(client_fd, object, sizeof(object))) == -1){
+				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				exit(1);
+			}
+			object[nbytes] = '\0';
 		}
 		else if(log_signal){
 			int i = 0;
@@ -489,39 +452,39 @@ void base64(char *dbuf, char *buf128, int len)
 	strcpy(buf, buf128);
 	for(i = 1; i <= len/3; i++)
 	{
-	tmp = buf+(i-1)*3;
-	cc = tmp[2];
-	tmp[2] = tmp[0];
-	tmp[0] = cc;
-	ddd = (struct data6 *)tmp;
-	dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
-	dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
-	dbuf[(i-1)*4+2] = con628((unsigned int)ddd->d3);
-	dbuf[(i-1)*4+3] = con628((unsigned int)ddd->d4);
+		tmp = buf+(i-1)*3;
+		cc = tmp[2];
+		tmp[2] = tmp[0];
+		tmp[0] = cc;
+		ddd = (struct data6 *)tmp;
+		dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
+		dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
+		dbuf[(i-1)*4+2] = con628((unsigned int)ddd->d3);
+		dbuf[(i-1)*4+3] = con628((unsigned int)ddd->d4);
 	}
 	if(len%3 == 1)
 	{
-	tmp = buf+(i-1)*3;
-	cc = tmp[2];
-	tmp[2] = tmp[0];
-	tmp[0] = cc;
-	ddd = (struct data6 *)tmp;
-	dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
-	dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
-	dbuf[(i-1)*4+2] = '=';
-	dbuf[(i-1)*4+3] = '=';
+		tmp = buf+(i-1)*3;
+		cc = tmp[2];
+		tmp[2] = tmp[0];
+		tmp[0] = cc;
+		ddd = (struct data6 *)tmp;
+		dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
+		dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
+		dbuf[(i-1)*4+2] = '=';
+		dbuf[(i-1)*4+3] = '=';
 	}
 	if(len%3 == 2)
 	{
-	tmp = buf+(i-1)*3;
-	cc = tmp[2];
-	tmp[2] = tmp[0];
-	tmp[0] = cc;
-	ddd = (struct data6 *)tmp;
-	dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
-	dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
-	dbuf[(i-1)*4+2] = con628((unsigned int)ddd->d3);
-	dbuf[(i-1)*4+3] = '=';
+		tmp = buf+(i-1)*3;
+		cc = tmp[2];
+		tmp[2] = tmp[0];
+		tmp[0] = cc;
+		ddd = (struct data6 *)tmp;
+		dbuf[(i-1)*4+0] = con628((unsigned int)ddd->d1);
+		dbuf[(i-1)*4+1] = con628((unsigned int)ddd->d2);
+		dbuf[(i-1)*4+2] = con628((unsigned int)ddd->d3);
+		dbuf[(i-1)*4+3] = '=';
 	}
 	return;
 }
