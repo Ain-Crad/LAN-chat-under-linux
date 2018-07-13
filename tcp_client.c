@@ -20,6 +20,7 @@
 #define MAX_BUF_SIZE 100
 int get_local_ip(const char *eth_inf, char *ip, int sd);//获取本机ip地址
 void *rec_data(void *fd);
+void *delay_ban(void);
 
 struct infstr{
 	char user_str[100];
@@ -200,67 +201,74 @@ int main(int argc, char *argv[]){
 		fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
 		exit(1);
 	}
-			ban = false;
+	ban = false;
 	while(1){
-		memset(send_msg, 0, sizeof(send_msg));
+		//memset(send_msg, 0, sizeof(send_msg));
 		exist = true;
 		perm = false;
-		//printf("send:");
+		fflush(stdin);
 		fgets(send_msg, MAX_BUF_SIZE, stdin);
+		fflush(stdin);
 		send_msg[strlen(send_msg) - 1] = '\0';
-		if(!ban){
+		//printf("fgets:%s\n", send_msg);
+		if(!ban || strcmp(send_msg, "(end)")==0){
+			//printf("wring\n");
+			//printf("msg:%s\n", send_msg);
 			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 				fprintf(stderr, "Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
-			//usleep(100000);//100ms
-			if(strcmp(send_msg, "(end)")==0){
-				break;
-			}
-			else if(strcmp(send_msg, "(sendTo)")==0){
-				usleep(100000);
-				while(1){
-					fgets(send_msg, MAX_BUF_SIZE, stdin);
-					send_msg[strlen(send_msg) - 1] = '\0';
-					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
-						exit(1);
-					}
-					if(exist){
-						fgets(send_msg, MAX_BUF_SIZE, stdin);
-						send_msg[strlen(send_msg) - 1] = '\0';
-						if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-							fprintf(stderr, "Write Error:%s\n", strerror(errno));
-							exit(1);
-						}
-						printf("(private message)\n");
-						break;
-					}
-					else{
-						break;
-					}
-			
+			//printf("wrint over\n");
+		}
+		
+		//usleep(100000);//100ms
+		if(strcmp(send_msg, "(end)")==0){
+			break;
+		}
+		else if(!ban && strcmp(send_msg, "(sendTo)")==0){
+			usleep(100000);
+			while(1){
+				fgets(send_msg, MAX_BUF_SIZE, stdin);
+				send_msg[strlen(send_msg) - 1] = '\0';
+				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
 				}
-			
-			}
-			else if(strcmp(send_msg, "(banned)")==0){
-				usleep(100000);
-				if(perm){
+				if(exist){
 					fgets(send_msg, MAX_BUF_SIZE, stdin);
 					send_msg[strlen(send_msg) - 1] = '\0';
 					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 						fprintf(stderr, "Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
-					if(exist){
-						printf("(banned successful)\n");
-					}
+					printf("(private message)\n");
+					break;
 				}
 				else{
-					printf("***You don't have the permission***\n");
+					break;
 				}
 			
 			}
+			
+		}
+		else if(!ban && strcmp(send_msg, "(banned)")==0){
+			usleep(100000);
+			if(perm){
+				fgets(send_msg, MAX_BUF_SIZE, stdin);
+				send_msg[strlen(send_msg) - 1] = '\0';
+				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				usleep(100000);
+				if(exist){
+					printf("(banned successful)\n");
+				}
+			}
+			else{
+				printf("***You don't have the permission***\n");
+			}
+		
 		}
 		
 	}
@@ -292,24 +300,12 @@ int get_local_ip(const char *eth_inf, char *ip, int sd)
 	return 0;
 }
 
-void show_msg(int signo)
-{
-	printf("(You can speak now)\n");
-	ban = false;
-}
-
 void *rec_data(void *fd){
 	int nbytes;
 	int sock_fd;
 	char rec_msg[100];
 	sock_fd = *((int *)fd);
 	//ban varible
-	struct sigaction act;
-	union sigval tsval;
-	act.sa_handler = show_msg;
-	act.sa_flags = 0;
-	sigemptyset(&act.sa_mask);
-	sigaction(50, &act, NULL);
 	
 	while(1){
 		//memset(rec_msg, 0, sizeof(rec_msg));
@@ -331,8 +327,11 @@ void *rec_data(void *fd){
 		else if(strcmp(rec_msg, stop) == 0){
 			printf("%s\n", stop);
 			ban = true;
-			sleep(15);
-			sigqueue(getpid(), 50, tsval);
+			pthread_t thread_new;
+			if(pthread_create(&thread_new, NULL, (void *)delay_ban, NULL) != 0){
+				fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
+				exit(1);
+			}
 		}
 		else{
 			printf("\t\t\t%s\n", rec_msg);
@@ -343,6 +342,18 @@ void *rec_data(void *fd){
 	//close(sock_fd);
 	pthread_exit(NULL);
 	
+}
+
+void *delay_ban(){
+	struct sigaction act;
+	union sigval tsval;
+	act.sa_handler = show_msg;
+	act.sa_flags = 0;
+	sigemptyset(&act.sa_mask);
+	sigaction(50, &act, NULL);
+	sleep(15);
+	sigqueue(getpid(), 50, tsval);
+	pthread_exit(NULL);
 }
 
 

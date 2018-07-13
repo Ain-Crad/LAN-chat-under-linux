@@ -389,12 +389,6 @@ void *rec_data(void *fd){
 				}
 				
 			}
-			
-			if((nbytes = read(client_fd, object, sizeof(object))) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
-				exit(1);
-			}
-			object[nbytes] = '\0';
 		}
 		else if(log_signal){
 			int i = 0;
