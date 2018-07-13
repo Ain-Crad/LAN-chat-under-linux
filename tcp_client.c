@@ -49,6 +49,7 @@ const char no_user[] = "*no such a user*\0";
 const char perm_y[] = "have permission\0";
 const char perm_n[] = "have not permission\0";
 const char stop[] = "***stop talking in 15 seconds***\0";
+const char start[] = "***you can talk now***\0";
 
 int main(int argc, char *argv[]){
 	const char *eth_name = "wlp6s0";
@@ -102,7 +103,7 @@ int main(int argc, char *argv[]){
 		fgets(model, MAX_BUF_SIZE, stdin);
 		model[strlen(model) - 1] = '\0';
 		if(write(sockfd, model, sizeof(model)) == -1){
-			fprintf(stderr, "Write Error:%s\n", strerror(errno));
+			fprintf(stderr, "a Write Error:%s\n", strerror(errno));
 			exit(1);
 		}
 		usleep(100000);//100ms
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]){
 			strcpy(inf.passwd_str, passwd);
 			//printf("writing\n");
 			if(write(sockfd, &inf, sizeof(struct infstr)) == -1){
-				fprintf(stderr, "Write Error:%s\n", strerror(errno));
+				fprintf(stderr, "b Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
 			//printf("write success\n");
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]){
 			//printf("wring\n");
 			//printf("msg:%s\n", send_msg);
 			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-				fprintf(stderr, "Write Error:%s\n", strerror(errno));
+				fprintf(stderr, "c Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
 			//printf("wrint over\n");
@@ -231,14 +232,14 @@ int main(int argc, char *argv[]){
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
 				send_msg[strlen(send_msg) - 1] = '\0';
 				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "d Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				if(exist){
 					fgets(send_msg, MAX_BUF_SIZE, stdin);
 					send_msg[strlen(send_msg) - 1] = '\0';
 					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
+						fprintf(stderr, "e Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
 					printf("(private message)\n");
@@ -257,7 +258,7 @@ int main(int argc, char *argv[]){
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
 				send_msg[strlen(send_msg) - 1] = '\0';
 				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "f Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				usleep(100000);
@@ -345,14 +346,9 @@ void *rec_data(void *fd){
 }
 
 void *delay_ban(){
-	struct sigaction act;
-	union sigval tsval;
-	act.sa_handler = show_msg;
-	act.sa_flags = 0;
-	sigemptyset(&act.sa_mask);
-	sigaction(50, &act, NULL);
 	sleep(15);
-	sigqueue(getpid(), 50, tsval);
+	ban = false;
+	printf("%s\n", start);
 	pthread_exit(NULL);
 }
 
