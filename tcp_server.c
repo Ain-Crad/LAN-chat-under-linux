@@ -188,7 +188,7 @@ void *rec_data(void *fd){
 				if(strcmp(data[i].data_user, inf.user_new) == 0){
 					if(strcmp(data[i].data_passwd, inf.passwd_new) == 0){
 						strcpy(data[i].data_ip, inf.ip_new);
-						data[cnt].data_fd = client_fd;
+						data[i].data_fd = client_fd;
 						//data[i].data_thread = thread;
 						data[i].online = true;
 						if(fir){
@@ -203,14 +203,14 @@ void *rec_data(void *fd){
 			if(i >= cnt){
 				//printf("I am in if\n");
 				if(write(client_fd, log_failed, strlen(log_failed)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "1 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 			}
 			else{
 				//printf("I am in else\n");
 				if(write(client_fd, log_succ, strlen(log_succ)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "2 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				log_signal = true;
@@ -232,14 +232,14 @@ void *rec_data(void *fd){
 				
 			if(user_old){
 				if(write(client_fd, sign_failed, strlen(sign_failed)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "3 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				user_old = false;
 			}
 			else{
 				if(write(client_fd, conti, strlen(conti)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "4 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 			}
@@ -255,7 +255,7 @@ void *rec_data(void *fd){
 			//注册成功
 			if(strcmp(buffer, verif_code) == 0){
 				if(write(client_fd, sign_succ, strlen(sign_succ)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "5 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				strcpy(data[cnt].data_user, sign.user_sign);
@@ -267,7 +267,7 @@ void *rec_data(void *fd){
 			else{
 				printf("buffer:%s\n", buffer);
 				if(write(client_fd, verif_failed, strlen(verif_failed)) == -1){
-					fprintf(stderr, "Write Error:%s\n", strerror(errno));
+					fprintf(stderr, "6 Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 			}
@@ -287,7 +287,7 @@ void *rec_data(void *fd){
 				}
 				if(i >= cnt){
 					if(write(client_fd, no_user, strlen(no_user)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
+						fprintf(stderr, "7 Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
 				}
@@ -317,7 +317,7 @@ void *rec_data(void *fd){
 					for(i = 0; i < cnt; i++){
 						if(data[i].online == true && data[i].data_fd == fd_tmp){
 							if(write(data[i].data_fd, user_name, strlen(user_name)) == -1){
-								fprintf(stderr, "Write Error:%s\n", strerror(errno));
+								fprintf(stderr, "8 Write Error:%s\n", strerror(errno));
 								exit(1);
 							}
 						}
@@ -343,7 +343,7 @@ void *rec_data(void *fd){
 			}
 			list[strlen(list)] = '\0';
 			if(write(client_fd, list, strlen(list)) == -1){
-				fprintf(stderr, "Write Error:%s\n", strerror(errno));
+				fprintf(stderr, "9 Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
 		}
@@ -353,7 +353,7 @@ void *rec_data(void *fd){
 				if(data[i].online == true && data[i].data_fd == client_fd){
 					if(data[i].perm){
 						if(write(client_fd, perm_y, strlen(perm_y)) == -1){
-							fprintf(stderr, "Write Error:%s\n", strerror(errno));
+							fprintf(stderr, "10 Write Error:%s\n", strerror(errno));
 							exit(1);
 						}
 						if((nbytes = read(client_fd, object, sizeof(object))) == -1){
@@ -369,20 +369,20 @@ void *rec_data(void *fd){
 						}
 						if(i >= cnt){
 							if(write(client_fd, no_user, strlen(no_user)) == -1){
-								fprintf(stderr, "Write Error:%s\n", strerror(errno));
+								fprintf(stderr, "11 Write Error:%s\n", strerror(errno));
 								exit(1);
 							}
 						}
 						else{
 							if(write(fd_tmp, stop, strlen(stop)) == -1){
-								fprintf(stderr, "Write Error:%s\n", strerror(errno));
+								fprintf(stderr, "12 Write Error:%s\n", strerror(errno));
 								exit(1);
 							}
 						}
 					}
 					else{
 						if(write(client_fd, perm_n, strlen(perm_n)) == -1){
-							fprintf(stderr, "Write Error:%s\n", strerror(errno));
+							fprintf(stderr, "13 Write Error:%s\n", strerror(errno));
 							exit(1);
 						}
 					}
@@ -395,7 +395,7 @@ void *rec_data(void *fd){
 			for(i = 0; i < cnt; i++){
 				if(data[i].online == true && data[i].data_fd != client_fd){
 					if(write(data[i].data_fd, user_name, strlen(user_name)) == -1){
-						fprintf(stderr, "Write Error:%s\n", strerror(errno));
+						fprintf(stderr, "14 Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
 				}

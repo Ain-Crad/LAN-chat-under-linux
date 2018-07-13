@@ -211,15 +211,12 @@ int main(int argc, char *argv[]){
 		fgets(send_msg, MAX_BUF_SIZE, stdin);
 		fflush(stdin);
 		send_msg[strlen(send_msg) - 1] = '\0';
-		//printf("fgets:%s\n", send_msg);
+		
 		if(!ban || strcmp(send_msg, "(end)")==0){
-			//printf("wring\n");
-			//printf("msg:%s\n", send_msg);
 			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 				fprintf(stderr, "c Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
-			//printf("wrint over\n");
 		}
 		
 		//usleep(100000);//100ms
@@ -227,7 +224,6 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		else if(!ban && strcmp(send_msg, "(sendTo)")==0){
-			usleep(100000);
 			while(1){
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
 				send_msg[strlen(send_msg) - 1] = '\0';
@@ -235,6 +231,7 @@ int main(int argc, char *argv[]){
 					fprintf(stderr, "d Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
+				usleep(100000);
 				if(exist){
 					fgets(send_msg, MAX_BUF_SIZE, stdin);
 					send_msg[strlen(send_msg) - 1] = '\0';
@@ -246,6 +243,7 @@ int main(int argc, char *argv[]){
 					break;
 				}
 				else{
+					printf("%s\n", no_user);
 					break;
 				}
 			
@@ -317,7 +315,7 @@ void *rec_data(void *fd){
 		rec_msg[nbytes] = '\0';
 		if(strcmp(rec_msg, no_user) == 0){
 			exist = false;
-			printf("%s\n", rec_msg);
+			//printf("%s\n", rec_msg);
 		}
 		else if(strcmp(rec_msg, perm_y) == 0){
 			perm = true;
