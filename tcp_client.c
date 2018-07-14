@@ -41,7 +41,7 @@ bool exist;
 bool signfail;
 bool perm;
 bool ban;
-
+bool isout;
 const char welcome[] = "Welcome\0";
 const char ad1[] = "***********\0";
 const char ad2[] = "*********************\0";
@@ -65,6 +65,8 @@ const char ok[] = "ok\0";
 const char ch[] = ":\0";
 const char l[] = "(\0";
 const char r[] = ")\0";
+const char out[] = "out\0";
+const char you_out[] = "you_out\0";
 
 int main(int argc, char *argv[]){
 	const char *eth_name = "wlp6s0";
@@ -250,11 +252,14 @@ int main(int argc, char *argv[]){
 		//memset(send_msg, 0, sizeof(send_msg));
 		exist = true;
 		perm = false;
+		isout = false;
 		fflush(stdin);
 		fgets(send_msg, MAX_BUF_SIZE, stdin);
 		fflush(stdin);
 		send_msg[strlen(send_msg) - 1] = '\0';
-		
+		if(isout){
+			break;
+		}
 		if(!ban || strcmp(send_msg, "(end)")==0){
 			if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 				fprintf(stderr, "c Write Error:%s\n", strerror(errno));
@@ -337,6 +342,28 @@ int main(int argc, char *argv[]){
 			}
 		
 		}
+		else if(!ban && strcmp(send_msg, "(out)")==0){
+			usleep(100000);
+			if(perm){
+				printf("user:");
+				fgets(send_msg, MAX_BUF_SIZE, stdin);
+				send_msg[strlen(send_msg) - 1] = '\0';
+				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
+					fprintf(stderr, "f Write Error:%s\n", strerror(errno));
+					exit(1);
+				}
+				usleep(100000);
+				if(exist){
+					printf("(out successful)\n");
+				}
+				else{
+					printf("%s\n", no_user);
+				}
+			}
+			else{
+				printf("*You don't have the permission*\n");
+			}
+		}
 		else if(!ban && strcmp(send_msg, "(online_list)") != 0){
 			char self[100];
 			memset(self, 0, sizeof(self));
@@ -411,6 +438,14 @@ void *rec_data(void *fd){
 				fprintf(stderr, "Create thread Error:%s\n", strerror(errno));
 				exit(1);
 			}
+		}
+		else if(strcmp(rec_msg, out) == 0){
+			if(write(sock_fd, you_out, sizeof(you_out)) == -1){
+				fprintf(stderr, "f Write Error:%s\n", strerror(errno));
+				exit(1);
+			}
+			isout = true;
+			pthread_exit(NULL);
 		}
 		else{
 			if(rec_msg[strlen(rec_msg) - 1] == '@'){

@@ -67,7 +67,10 @@ const char stop[] = "******************stop talking in 30 seconds***************
 const char start[] = "***********************you can talk now***********************\0";
 const char online_answer[] = "online answer\0";
 const char ok[] = "ok\0";
+const char out[] = "out\0";
+const char you_out[] = "you_out\0";
 char buffer[100];
+
 
 char verif_code[10];
 /******email-setting******/
@@ -163,7 +166,7 @@ void *rec_data(void *fd){
 		}
 		strcat(user_name, r);
 		if((nbytes = read(client_fd, msg, sizeof(msg))) == -1){
-			fprintf(stderr, "Read Error:%s\n", strerror(errno));
+			fprintf(stderr, "1 Read Error:%s\n", strerror(errno));
 			exit(1);
 		}
 		//printf("read again\nmsg:%s\n",msg);
@@ -171,7 +174,7 @@ void *rec_data(void *fd){
 		strcat(user_name, ch);
 		strcat(user_name, msg);
 		
-		if(strcmp(msg, "(end)")==0){
+		if(strcmp(msg, "(end)")==0 || strcmp(msg, you_out) == 0){
 			//printf("server:end\n");
 			int i;
 			for(i = 0; i < cnt; i++){
@@ -185,7 +188,7 @@ void *rec_data(void *fd){
 		else if(strcmp(msg, "log in")==0 && !log_signal){
 			int i;
 			if((nbytes = read(client_fd, &inf, sizeof(struct infnew))) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				fprintf(stderr, "2 Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
 			for(i = 0; i < cnt; i++){
@@ -222,7 +225,7 @@ void *rec_data(void *fd){
 		else if(strcmp(msg, "sign up") == 0 && !log_signal){
 			int i;
 			if((nbytes = read(client_fd, &sign, sizeof(struct sign_up))) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				fprintf(stderr, "3 Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
 				
@@ -252,7 +255,7 @@ void *rec_data(void *fd){
 			printf("verif_code:%s\n", verif_code);
 			email(sign.email_sign, verif_code);
 			if((nbytes = read(client_fd, buffer, sizeof(buffer))) == -1){
-				fprintf(stderr, "Read Error:%s\n", strerror(errno));
+				fprintf(stderr, "4 Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
 			//注册成功
@@ -279,7 +282,7 @@ void *rec_data(void *fd){
 			int i;
 			while(1){
 				if((nbytes = read(client_fd, object, sizeof(object))) == -1){
-					fprintf(stderr, "Read Error:%s\n", strerror(errno));
+					fprintf(stderr, "5 Read Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				object[nbytes] = '\0';
@@ -296,7 +299,7 @@ void *rec_data(void *fd){
 				}
 				else{
 					if((nbytes = read(client_fd, msg, sizeof(msg))) == -1){
-						fprintf(stderr, "Read Error:%s\n", strerror(errno));
+						fprintf(stderr, "6 Read Error:%s\n", strerror(errno));
 						exit(1);
 					}
 					msg[nbytes] = '\0';
@@ -358,7 +361,7 @@ void *rec_data(void *fd){
 							exit(1);
 						}
 						if((nbytes = read(client_fd, object, sizeof(object))) == -1){
-							fprintf(stderr, "Read Error:%s\n", strerror(errno));
+							fprintf(stderr, "7 Read Error:%s\n", strerror(errno));
 							exit(1);
 						}
 						object[nbytes] = '\0';
@@ -376,6 +379,49 @@ void *rec_data(void *fd){
 						}
 						else{
 							if(write(fd_tmp, stop, strlen(stop)) == -1){
+								fprintf(stderr, "12 Write Error:%s\n", strerror(errno));
+								exit(1);
+							}
+						}
+					}
+					else{
+						if(write(client_fd, perm_n, strlen(perm_n)) == -1){
+							fprintf(stderr, "13 Write Error:%s\n", strerror(errno));
+							exit(1);
+						}
+					}
+				}
+				
+			}
+		}
+		else if(strcmp(msg, "(out)") == 0){
+			int i;
+			for(i = 0; i < cnt; i++){
+				if(data[i].online == true && data[i].data_fd == client_fd){
+					if(data[i].perm){
+						if(write(client_fd, perm_y, strlen(perm_y)) == -1){
+							fprintf(stderr, "10 Write Error:%s\n", strerror(errno));
+							exit(1);
+						}
+						if((nbytes = read(client_fd, object, sizeof(object))) == -1){
+							fprintf(stderr, "8 Read Error:%s\n", strerror(errno));
+							exit(1);
+						}
+						object[nbytes] = '\0';
+						for(i = 0; i < cnt; i++){
+							if(data[i].online == true && strcmp(data[i].data_user, object) == 0){
+								fd_tmp = data[i].data_fd;
+								break;
+							}
+						}
+						if(i >= cnt){
+							if(write(client_fd, no_user, strlen(no_user)) == -1){
+								fprintf(stderr, "11 Write Error:%s\n", strerror(errno));
+								exit(1);
+							}
+						}
+						else{
+							if(write(fd_tmp, out, strlen(out)) == -1){
 								fprintf(stderr, "12 Write Error:%s\n", strerror(errno));
 								exit(1);
 							}
