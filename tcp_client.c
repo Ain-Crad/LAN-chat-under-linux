@@ -21,6 +21,9 @@
 int get_local_ip(const char *eth_inf, char *ip, int sd);//获取本机ip地址
 void *rec_data(void *fd);
 void *delay_ban(void);
+void rcal(const char *s);
+void lcal(const char *s);
+void mcal(const char *s);
 
 struct infstr{
 	char user_str[100];
@@ -39,17 +42,29 @@ bool signfail;
 bool perm;
 bool ban;
 
-const char sign_failed[] = "The user has been signed\0";
-const char verif_failed[] = "The verification code is wrong\0";
-const char log_failed[] = "The user name or the password is not correct\0";
-const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
-const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
+const char welcome[] = "Welcome\0";
+const char ad1[] = "***********\0";
+const char ad2[] = "*********************\0";
+const char ad3[] = "**************************************************************\0";
+const char log_sign[] = "log in or sign up\0";
+const char no_choice[] = "!!!No such a choice, please input again!!!\0";
+const char sign_failed[] = "!!!The user has been signed!!!\0";
+const char verif_failed[] = "!!!The verification code is wrong!!!\0";
+const char log_failed[] = "!!!The user name or the password is not correct!!!\0";
+const char log_succ[] = "Login successful, enjoy the chat\0";
+const char sign_succ[] = "Sign up successful\0";
+const char sign_after[] = "You can log in now or continue to sign up a new user\0";
 const char conti[] = "continue\0";
 const char no_user[] = "*no such a user*\0";
 const char perm_y[] = "have permission\0";
 const char perm_n[] = "have not permission\0";
-const char stop[] = "***stop talking in 15 seconds***\0";
-const char start[] = "***you can talk now***\0";
+const char stop[] = "******************stop talking in 30 seconds******************\0";
+const char start[] = "***********************you can talk now***********************\0";
+const char online_answer[] = "online answer\0";
+const char ok[] = "ok\0";
+const char ch[] = ":\0";
+const char l[] = "(\0";
+const char r[] = ")\0";
 
 int main(int argc, char *argv[]){
 	const char *eth_name = "wlp6s0";
@@ -96,10 +111,17 @@ int main(int argc, char *argv[]){
 	}
 	get_local_ip(eth_name, ip, sockfd);
 	
+	mcal(welcome);
+	printf("%s\n", welcome);
+	mcal(ad1);
+	printf("%s\n", ad1);
+	mcal(ad2);
+	printf("%s\n", ad2);
 	
 	while(1){
 		signfail = false;
-		printf("log in or sign up\n");
+		mcal(log_sign);
+		printf("%s\n", log_sign);
 		fgets(model, MAX_BUF_SIZE, stdin);
 		model[strlen(model) - 1] = '\0';
 		if(write(sockfd, model, sizeof(model)) == -1){
@@ -131,9 +153,18 @@ int main(int argc, char *argv[]){
 				exit(1);
 			}
 			buffer[nbytes] = '\0';
-			printf("%s\n", buffer);
 			if(strcmp(buffer, log_succ) == 0){
+				mcal(log_succ);
+				printf("%s\n", log_succ);
+				mcal(ad3);
+				printf("%s\n", ad3);
 				break;
+			}
+			else if(strcmp(buffer, log_failed) == 0){
+				mcal(log_failed);
+				printf("%s\n", log_failed);
+				mcal(ad3);
+				printf("%s\n", ad3);
 			}
 		}
 		else if(strcmp(model,"sign up") == 0){
@@ -159,9 +190,11 @@ int main(int argc, char *argv[]){
 				exit(1);
 			}
 			buffer[nbytes] = '\0';
-			
 			if(strcmp(buffer, sign_failed) == 0){
+				mcal(sign_failed);
 				printf("%s\n", sign_failed);
+				mcal(ad3);
+				printf("%s\n", ad3);
 				continue;
 			}
 			else{
@@ -177,13 +210,21 @@ int main(int argc, char *argv[]){
 					exit(1);
 				}
 				buffer[nbytes] = '\0';
-				printf("%s\n", buffer);
+
 				if(strcmp(buffer, sign_succ) == 0){
-					//printf("%s\n", sign_succ);
+					mcal(sign_succ);
+					printf("%s\n", sign_succ);
+					mcal(sign_after);
+					printf("%s\n", sign_after);
+					mcal(ad3);
+					printf("%s\n", ad3);
 					continue;
 				}
 				else if(strcmp(buffer, verif_failed) == 0){
-					//printf("%s\n", verif_failed);
+					mcal(verif_failed);
+					printf("%s\n", verif_failed);
+					mcal(ad3);
+					printf("%s\n", ad3);
 					continue;
 				}
 				
@@ -191,9 +232,11 @@ int main(int argc, char *argv[]){
 		}
 		
 		else{
-			printf("No such a choice, please input again\n");
+			mcal(no_choice);
+			printf("%s\n", no_choice);
+			mcal(ad3);
+			printf("%s\n", ad3);
 			memset(model, 0, sizeof(model));
-			//fgets(model, MAX_BUF_SIZE, stdin);
 		}
 	}
 	
@@ -224,22 +267,43 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		else if(!ban && strcmp(send_msg, "(sendTo)")==0){
+			char self[100];
+			char to[100];
+			memset(self, 0, sizeof(self));
+			memset(to, 0, sizeof(to));
+			strcat(self, l);
+			strcat(self, "me");
+			strcat(self, r);
+			strcat(self, ch);
+			
 			while(1){
+				printf("user:");
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
 				send_msg[strlen(send_msg) - 1] = '\0';
+				strcpy(to, send_msg);
 				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 					fprintf(stderr, "d Write Error:%s\n", strerror(errno));
 					exit(1);
 				}
 				usleep(100000);
 				if(exist){
+					printf("message:");
 					fgets(send_msg, MAX_BUF_SIZE, stdin);
 					send_msg[strlen(send_msg) - 1] = '\0';
 					if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
 						fprintf(stderr, "e Write Error:%s\n", strerror(errno));
 						exit(1);
 					}
-					printf("(private message)\n");
+					//printf("(private message)\n");
+					
+					strcat(self, send_msg);
+					strcat(self, l);
+					strcat(self, "to:");
+					strcat(self, to);
+					strcat(self, r);
+					rcal(self);
+					printf("%s\n",self);
+					
 					break;
 				}
 				else{
@@ -253,6 +317,7 @@ int main(int argc, char *argv[]){
 		else if(!ban && strcmp(send_msg, "(banned)")==0){
 			usleep(100000);
 			if(perm){
+				printf("user:");
 				fgets(send_msg, MAX_BUF_SIZE, stdin);
 				send_msg[strlen(send_msg) - 1] = '\0';
 				if(write(sockfd, send_msg, sizeof(send_msg)) == -1){
@@ -263,11 +328,25 @@ int main(int argc, char *argv[]){
 				if(exist){
 					printf("(banned successful)\n");
 				}
+				else{
+					printf("%s\n", no_user);
+				}
 			}
 			else{
-				printf("***You don't have the permission***\n");
+				printf("*You don't have the permission*\n");
 			}
 		
+		}
+		else if(!ban && strcmp(send_msg, "(online_list)") != 0){
+			char self[100];
+			memset(self, 0, sizeof(self));
+			strcat(self, l);
+			strcat(self, "me");
+			strcat(self, r);
+			strcat(self, ch);
+			strcat(self, send_msg);
+			rcal(self);
+			printf("%s\n", self);
 		}
 		
 	}
@@ -324,6 +403,7 @@ void *rec_data(void *fd){
 			perm = false;
 		}
 		else if(strcmp(rec_msg, stop) == 0){
+			mcal(stop);
 			printf("%s\n", stop);
 			ban = true;
 			pthread_t thread_new;
@@ -333,7 +413,14 @@ void *rec_data(void *fd){
 			}
 		}
 		else{
-			printf("\t\t\t%s\n", rec_msg);
+			if(rec_msg[strlen(rec_msg) - 1] == '@'){
+				rec_msg[strlen(rec_msg) - 1] = '\0';
+				printf("%s\n", rec_msg);
+			}
+			else{
+				lcal(rec_msg);
+				printf("%s\n", rec_msg);
+			}
 		}
 		
 	}
@@ -344,11 +431,49 @@ void *rec_data(void *fd){
 }
 
 void *delay_ban(){
-	sleep(15);
+	sleep(30);
 	ban = false;
+	mcal(start);
 	printf("%s\n", start);
 	pthread_exit(NULL);
 }
 
+void rcal(const char *s){
+	struct winsize w;
+	int len, mid;
+	int i;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	
+	len = strlen(s);
+	mid = w.ws_col / 2;
+	for(i = 0; i < mid + 3; i++){
+		printf(" ");
+	}
+}
 
+void lcal(const char *s){
+	struct winsize w;
+	int len, mid;
+	int i;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	
+	len = strlen(s);
+	mid = w.ws_col / 2;
+	for(i = 0; i < mid - 20; i++){
+		printf(" ");
+	}
+}
+
+void mcal(const char *s){
+	struct winsize w;
+	int len, alen;
+	int i;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	
+	len = strlen(s);
+	alen = w.ws_col;
+	for(i = 0; i < (alen - len) / 2; i++){
+		printf(" ");
+	}
+}
 

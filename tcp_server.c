@@ -53,16 +53,20 @@ const char priv[] = "(private message)\0";
 const char no_user[] = "*no such a user*\0";
 const char l[] = "(\0";
 const char r[] = ")\0";
-const char sign_failed[] = "The user has been signed\0";
-const char verif_failed[] = "The verification code is wrong\0";
-const char log_failed[] = "The user name or the password is not correct\0";
+const char sign_failed[] = "!!!The user has been signed!!!\0";
+const char verif_failed[] = "!!!The verification code is wrong!!!\0";
+const char log_failed[] = "!!!The user name or the password is not correct!!!\0";
 const char conti[] = "continue\0";
 const char hello[] = "Long time no see, how are you?\n";
-const char log_succ[] = "login successful, enjoy the chat\n*********************************************************";
-const char sign_succ[] = "sign up successful, you can log in now or continue to sign up a new user.\n*********************************************************************\n";
+const char log_succ[] = "Login successful, enjoy the chat\0";
+const char sign_succ[] = "Sign up successful\0";
+const char sign_after[] = "You can log in now or continue to sign up a new user\0";
 const char perm_y[] = "have permission\0";
 const char perm_n[] = "have not permission\0";
-const char stop[] = "***stop talking in 15 seconds***\0";
+const char stop[] = "******************stop talking in 30 seconds******************\0";
+const char start[] = "***********************you can talk now***********************\0";
+const char online_answer[] = "online answer\0";
+const char ok[] = "ok\0";
 char buffer[100];
 
 char verif_code[10];
@@ -189,7 +193,6 @@ void *rec_data(void *fd){
 					if(strcmp(data[i].data_passwd, inf.passwd_new) == 0){
 						strcpy(data[i].data_ip, inf.ip_new);
 						data[i].data_fd = client_fd;
-						//data[i].data_thread = thread;
 						data[i].online = true;
 						if(fir){
 							data[i].perm = true;
@@ -224,7 +227,7 @@ void *rec_data(void *fd){
 			}
 				
 			for(i = 0; i < cnt; i++){
-				if(sign.user_sign == data[i].data_user){
+				if(strcmp(sign.user_sign, data[i].data_user) == 0){
 					user_old = true;
 					break;
 				}
@@ -336,14 +339,12 @@ void *rec_data(void *fd){
 					list[strlen(list)] = '\t';
 					strcat(list, data[i].data_ip);
 					list[strlen(list)] = '\n';
-					list[strlen(list)] = '\t';
-					list[strlen(list)] = '\t';
-					list[strlen(list)] = '\t';
 				}
 			}
+			strcat(list, "@");
 			list[strlen(list)] = '\0';
 			if(write(client_fd, list, strlen(list)) == -1){
-				fprintf(stderr, "9 Write Error:%s\n", strerror(errno));
+				fprintf(stderr, "9-2 Write Error:%s\n", strerror(errno));
 				exit(1);
 			}
 		}
