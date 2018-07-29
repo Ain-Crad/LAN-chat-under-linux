@@ -228,7 +228,7 @@ void *rec_data(void *fd){
 				fprintf(stderr, "3 Read Error:%s\n", strerror(errno));
 				exit(1);
 			}
-				
+			
 			for(i = 0; i < cnt; i++){
 				if(strcmp(sign.user_sign, data[i].data_user) == 0){
 					user_old = true;
