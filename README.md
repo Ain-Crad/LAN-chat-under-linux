@@ -1,11 +1,13 @@
 ①编译
+
 ![1](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/1.png)
 
-②运行
-（服务端）
+②运行（服务端）
+
 ![2](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/2.png)
 
 （客户端）
+
 ![3](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/3.png)
 
 其中客户端连接的IP地址是服务器的IP地址，由服务器端ifconfig命令查得
@@ -38,6 +40,7 @@ ain: hi, I am ain
 wzj: hello, I am wzj
 xy2: hey, I am xy2
 界面左侧显示收到的消息，右侧显示自己发送的消息。
+
 ![12](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/12.png)
 ![13](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/13.png)
 ![14](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/14.png)
@@ -48,9 +51,11 @@ ain发送私聊请求(sendTo)，之后填写要发送的对象wzj以及要发送
 ![15](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/15.png)
 
 wzj收到私聊消息
+
 ![16](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/16.png)
 
 xy2未收到私聊消息
+
 ![17](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/17.png)
 
 ⑦在线状态查询
@@ -68,6 +73,7 @@ xy2被禁言，30秒内无法发送消息（输入无效）
 
 ⑨踢出群聊
 同样只有管理员权限的用户可以发起踢出群成员的请求。ain输入(out)发起踢出成员请求，填写用户名wzj踢出该用户。
+
 ![21](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/21.png)
 
 此时wzj已被踢出，有任何动作都会直接登出。
@@ -82,6 +88,7 @@ ain和xy2输入(end)发出登出请求，退出程序。
 ![25](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/25.png)
 
 三个客户端的整体界面情况：
+
 ![26](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/26.png)
 ![27](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/27.png)
 ![28](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/28.png)
