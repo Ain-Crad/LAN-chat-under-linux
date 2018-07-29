@@ -8,7 +8,7 @@
 
 （客户端）
 
-![3](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/3.png)
+![3](https://github.com/Ain-Crad/LAN-chat-under-linux/raw/master/imgs/3_new.png)
 
 其中客户端连接的IP地址是服务器的IP地址，由服务器端ifconfig命令查得
 
